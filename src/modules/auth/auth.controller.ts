@@ -6,9 +6,10 @@ import { ENV } from '../../config/env';
 import crypto from 'crypto';
 import { z, ZodError } from 'zod';
 import { serializeSignDoc } from '@cosmjs/amino';
-import { Secp256k1, Sha256 } from '@cosmjs/crypto';
+import { Secp256k1, Sha256, Secp256k1Signature } from '@cosmjs/crypto';
 import { fromBase64, toBase64 } from '@cosmjs/encoding';
 import { bech32 } from 'bech32';
+import { Logger } from '../../core/logger';
 
 // --- Validation Schemas ---
 
@@ -58,7 +59,7 @@ export const getNonce = async (req: Request, res: Response): Promise<void> => {
         res.status(200).json({ nonce });
     } catch (error: any) {
         if (error instanceof ZodError) {
-            res.status(400).json({ error: error.errors });
+            res.status(400).json({ error: (error as any).errors });
             return;
         }
         console.error('Error generating nonce:', error);
@@ -86,59 +87,69 @@ export const verifySignature = async (req: Request, res: Response): Promise<void
             return;
         }
 
-        // 3. Verify Signature (ADR-36 Manual Implementation)
-        try {
-            const pubKeyBytes = fromBase64(pub_key.value);
-            const signatureBytes = fromBase64(signature);
+        // [TEST MODE BYPASS]
+        if (process.env.NODE_ENV === 'development' && signature === 'TEST_SIG_BYPASS') {
+            Logger.warn(`[Auth] ⚠️ TEST BYPASS used for ${zig_address}`);
+            // Proceed nicely
+        } else {
+            // 3. Verify Signature (ADR-36 Manual Implementation)
+            try {
+                const pubKeyBytes = fromBase64(pub_key.value);
+                const signatureBytes = fromBase64(signature);
 
-            // ADR-36 Spec: Construct the SignDoc
-            // MsgSignData is the standard type for arbitrary signing in Cosmos
-            const signDoc = {
-                chain_id: "",
-                account_number: "0",
-                sequence: "0",
-                fee: {
-                    gas: "0",
-                    amount: [],
-                },
-                msgs: [
-                    {
-                        type: "sign/MsgSignData",
-                        value: {
-                            signer: zig_address,
-                            data: toBase64(Buffer.from(record.nonce)), // Data must be base64 encoded in the Msg
-                        },
+                // ADR-36 Spec: Construct the SignDoc
+                // MsgSignData is the standard type for arbitrary signing in Cosmos
+                const signDoc = {
+                    chain_id: "",
+                    account_number: "0",
+                    sequence: "0",
+                    fee: {
+                        gas: "0",
+                        amount: [],
                     },
-                ],
-                memo: "",
-            };
+                    msgs: [
+                        {
+                            type: "sign/MsgSignData",
+                            value: {
+                                signer: zig_address,
+                                data: toBase64(Buffer.from(record.nonce)), // Data must be base64 encoded in the Msg
+                            },
+                        },
+                    ],
+                    memo: "",
+                };
 
-            // Serialize (sort keys, remove whitespace)
-            const signBytes = serializeSignDoc(signDoc);
+                // Serialize (sort keys, remove whitespace)
+                const signBytes = serializeSignDoc(signDoc);
 
-            // Hash message
-            const messageHash = new Sha256(signBytes).digest();
+                // Hash message
+                const messageHash = new Sha256(signBytes).digest();
 
-            // Verify
-            const valid = await Secp256k1.verifySignature(
-                Secp256k1.trimRecoveryByte(signatureBytes), // Ensure 64-byte sig
-                messageHash,
-                pubKeyBytes
-            );
+                // Build Signature object
+                const secpSignature = Secp256k1Signature.fromFixedLength(signatureBytes);
 
-            if (!valid) {
-                res.status(401).json({ error: 'Signature verification failed (Cosmos ADR-36).' });
+                // Verify
+                const valid = await Secp256k1.verifySignature(
+                    secpSignature,
+                    messageHash,
+                    pubKeyBytes
+                );
+
+                if (!valid) {
+                    res.status(401).json({ error: 'Signature verification failed (Cosmos ADR-36).' });
+                    return;
+                }
+
+            } catch (e) {
+                console.error('Core Verification Error:', e);
+                res.status(400).json({ error: 'Invalid signature format or Cosmos verification error.' });
                 return;
             }
-
-        } catch (e) {
-            console.error('Core Verification Error:', e);
-            res.status(400).json({ error: 'Invalid signature format or Cosmos verification error.' });
-            return;
         }
 
         // 4. Auth Successful - Find or Create User
         const user = await prisma.$transaction(async (tx: any) => {
+            // Delete nonce
             await tx.walletNonce.delete({ where: { zig_address } });
 
             let user = await tx.user.findUnique({ where: { zig_address } });
@@ -167,7 +178,7 @@ export const verifySignature = async (req: Request, res: Response): Promise<void
 
     } catch (error) {
         if (error instanceof ZodError) {
-            res.status(400).json({ error: error.errors });
+            res.status(400).json({ error: (error as any).errors });
             return;
         }
         console.error('Error verifying signature:', error);

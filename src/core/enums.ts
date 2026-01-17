@@ -9,3 +9,9 @@ export enum RewardType {
     ZIG = 'ZIG',
     FAUCET = 'FAUCET'
 }
+
+export enum FaucetStatus {
+    PENDING = 'PENDING',
+    SENT = 'SENT',
+    FAILED = 'FAILED'
+}

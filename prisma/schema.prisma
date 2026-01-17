@@ -96,6 +96,8 @@ model RewardEvent {
   faucet_request FaucetRequest?
 
   @@map("reward_events")
+  @@index([user_id])
+  @@index([created_at])
 }
 
 // FaucetStatus: PENDING, SENT, FAILED

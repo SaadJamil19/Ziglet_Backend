@@ -2,6 +2,8 @@ import { prisma } from '../../core/db';
 import { getCurrentGardenDay } from '../../core/time';
 import { RewardsService } from '../rewards/rewards.service';
 import { RewardSource, RewardType } from '../../core/enums';
+import { Logger } from '../../core/logger';
+import { taskCompletionCounter } from '../../core/metrics';
 
 export class TaskService {
     /**
@@ -10,7 +12,7 @@ export class TaskService {
     static async seedDefaults() {
         const defaults = [
             { key: 'water_grass', max_per_day: 1, reward_amount: 5, reward_type: RewardType.ZIG },
-            { key: 'swap', max_per_day: 5, reward_amount: 10, reward_type: RewardType.ZIG }, // External action?
+            { key: 'swap', max_per_day: 5, reward_amount: 10, reward_type: RewardType.ZIG },
             { key: 'share', max_per_day: 1, reward_amount: 2, reward_type: RewardType.ZIG },
         ];
 
@@ -60,7 +62,7 @@ export class TaskService {
         if (!task) throw new Error('Task not found');
 
         // 2. Check Limits (use transaction)
-        return await prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Find or Create Log
             let log = await tx.userTaskLog.findUnique({
                 where: {
@@ -109,5 +111,11 @@ export class TaskService {
                 reward: { amount: task.reward_amount, type: task.reward_type }
             };
         });
+
+        // Log & Metric AFTER transaction
+        Logger.info(`[Tasks] User ${userId} completed ${taskKey}`);
+        taskCompletionCounter.labels(taskKey, 'success').inc();
+
+        return result;
     }
 }

@@ -35,38 +35,24 @@ export const visitGarden = async (req: Request, res: Response): Promise<void> =>
                 }
             });
             console.log(`[Garden] User ${userId} visited for day ${today}`);
+
+            // 1.5 Update Growth (Moved inside to ensure 1x per day)
+            await prisma.gardenState.upsert({
+                where: { user_id: userId },
+                update: {
+                    growth_points: { increment: 10 },
+                    last_growth_day: today
+                },
+                create: {
+                    user_id: userId,
+                    growth_points: 10,
+                    last_growth_day: today
+                }
+            });
         }
 
-        // 1.5 Update Streak
+        // 1.6 Update Streak (Always call, service handles idempotency for same day)
         const streak = await StreakService.updateStreak(userId, today);
-
-        // 1.6 Update Growth (Garden grows on every visit)
-        if (!dailyState || (dailyState && dailyState.visited_at.toISOString().split('T')[0] !== today)) {
-            // Logic check: dailyState was just created/fetched. If created (visited_at is now), we grow.
-            // Actually, `dailyState` logic above handles "if !dailyState -> create".
-            // We should just check if this specific request triggered the visit creation? 
-            // Or rely on idempotency: we only credit growth if valid visit.
-            // Simplest: Just increment growth if we returned 'visited: true' which implies we accepted the visit.
-            // But let's be safe. We'll upsert the garden state.
-        }
-
-        // We know we just visited. Let's add growth points strictly if it was a create action?
-        // In lines 24-35 we created dailyState.
-        // Let's add growth logic inside that block or separately.
-        // Actually, let's just do it:
-
-        await prisma.gardenState.upsert({
-            where: { user_id: userId },
-            update: {
-                growth_points: { increment: 10 }, // 10 points per day
-                last_growth_day: today
-            },
-            create: {
-                user_id: userId,
-                growth_points: 10,
-                last_growth_day: today
-            }
-        });
 
         // 2. Check and Issue Login Reward
         if (!dailyState.login_reward_claimed) {

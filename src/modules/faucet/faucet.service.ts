@@ -1,7 +1,6 @@
 import { prisma } from '../../core/db';
 import axios from 'axios';
 import { ENV } from '../../config/env';
-import { FaucetStatus } from '@prisma/client';
 
 export class FaucetService {
     /**
