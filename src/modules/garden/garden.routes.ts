@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { visitGarden, getGardenState } from './garden.controller';
+import { visitGarden, getGardenState, waterGarden } from './garden.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -12,5 +12,8 @@ router.post('/visit', visitGarden);
 
 // GET /garden/state
 router.get('/state', getGardenState);
+
+// POST /garden/water
+router.post('/water', waterGarden);
 
 export default router;

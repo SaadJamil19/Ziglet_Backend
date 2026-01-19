@@ -36,20 +36,8 @@ export const visitGarden = async (req: Request, res: Response): Promise<void> =>
             });
             console.log(`[Garden] User ${userId} visited for day ${today}`);
 
-            // 1.5 Update Growth (Moved inside to ensure 1x per day)
-            await prisma.gardenState.upsert({
-                where: { user_id: userId },
-                update: {
-                    growth_points: { increment: 10 },
-                    last_growth_day: today
-                },
-                create: {
-                    user_id: userId,
-                    growth_points: 10,
-                    last_growth_day: today
-                }
-            });
-        }
+        // Growth points are updated when the user waters the garden.
+    }
 
         // 1.6 Update Streak (Always call, service handles idempotency for same day)
         const streak = await StreakService.updateStreak(userId, today);
@@ -148,6 +136,37 @@ export const getGardenState = async (req: Request, res: Response): Promise<void>
 
     } catch (error) {
         console.error('Error in getGardenState:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * Water the garden once per day (increments growth points by 10).
+ */
+export const waterGarden = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = req.user!.userId;
+        const today = getCurrentGardenDay();
+
+        const gardenState = await prisma.gardenState.upsert({
+            where: { user_id: userId },
+            update: {
+                growth_points: { increment: 10 },
+                last_growth_day: today
+            },
+            create: {
+                user_id: userId,
+                growth_points: 10,
+                last_growth_day: today
+            }
+        });
+
+        res.status(200).json({
+            watered: true,
+            growth: gardenState
+        });
+    } catch (error) {
+        console.error('Error in waterGarden:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
