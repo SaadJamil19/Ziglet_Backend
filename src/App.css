@@ -1,0 +1,21 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a1f0f 0%, #1b5e20 100%);
+}
+
+.ziglet-toast {
+  background: linear-gradient(145deg, rgba(10, 20, 12, 0.98), rgba(20, 36, 24, 0.98));
+  border: 1px solid rgba(120, 220, 160, 0.3);
+  color: #e7f6ea;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  font-family: "Cinzel", "Garamond", serif;
+  letter-spacing: 0.2px;
+}
+
+.ziglet-toast__desc {
+  color: rgba(231, 246, 234, 0.75);
+}
