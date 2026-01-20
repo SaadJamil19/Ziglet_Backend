@@ -1,0 +1,47 @@
+﻿[dotenv@17.2.3] injecting env (15) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+≡ƒöî DataSource Config: { isTest: true, NODE_ENV: 'test', type: 'sqljs' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+ΓÜá∩╕Å  Test Mode: Redis Mock Enabled Immediately
+≡ƒö╡ Starting Virtual Environment (In-Memory DB)...
+≡ƒôª In-Memory Database Initialized.
+≡ƒî▒ Seeding Tasks...
+≡ƒÜÇ Virtual Server running on port 3001
+
+--- ≡ƒæñ STEP 1: User Auth (Cosmos Native) ---
+   Wallet ZIG: zig1qy6eqzsl7k8j52vf3u6l5znwsuhm3vpzty06zk
+   Pubkey: A+2rcJjaeI633Rk/B416hnufJZRX/xgVsh4sugjBDHVI
+   -> Requesting Nonce...
+[0mPOST /api/auth/nonce [32m200[0m 23.446 ms - 147[0m
+   Signature Len (Bytes): 64
+   Signature Base64: o3K8WWWh3PukNH42X/h8whwEMYr6uUzbnGL76tkj2b001+r7DgIJp89getYMeoNL+GFt0WVlsepFjOo7cNoQXQ==
+≡ƒöÉ Debug Auth:
+   Address: zig1qy6eqzsl7k8j52vf3u6l5znwsuhm3vpzty06zk
+   PubKey Base64: A+2rcJjaeI633Rk/B416hnufJZRX/xgVsh4sugjBDHVI
+   Signature Base64: o3K8WWWh3PukNH42X/h8whwEMYr6uUzbnGL76tkj2b001+r7DgIJp89getYMeoNL+GFt0WVlsepFjOo7cNoQXQ==
+   PubKey Bytes Len: 33
+   Signature Bytes Len: 64
+≡ƒöÉ Native Zig Auth Success: zig1qy6eqzsl7k8j52vf3u6l5znwsuhm3vpzty06zk
+[0mPOST /api/auth/verify [32m200[0m 16.347 ms - 285[0m
+   Γ£à Authenticated
+
+--- ≡ƒÉª STEP 2: Link Twitter (Mock) ---
+[0mPOST /api/social/twitter/callback [32m200[0m 10.545 ms - 93[0m
+   Γ£à Linked @VirtualUser
+
+--- ≡ƒôï STEP 3: Verify Task Logic ---
+[0mGET /api/tasks [32m200[0m 3.815 ms - 259[0m
+   Task: twitter-follow | Completed: false
+   -> Completing Task...
+[TwitterService] Verifying if 999_VIRTUAL follows @ZigletApp
+[0mPOST /api/tasks/complete [32m200[0m 10.658 ms - 92[0m
+   Γ£à Claim Result: {
+  success: true,
+  reward: 1,
+  type: 'faucet',
+  eventId: 'dac0f009-0922-457e-a9da-1683e355e010'
+}
+[0mGET /api/tasks [32m200[0m 2.472 ms - 258[0m
+   Task: twitter-follow | Completed: true
+
+Γ£¿Γ£¿ VIRTUAL CHECK PASSED: System works end-to-end! Γ£¿Γ£¿
