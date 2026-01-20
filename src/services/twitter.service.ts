@@ -63,9 +63,12 @@ export class TwitterService {
 
     private async linkAccount(userId: string, twitterId: string, username: string) {
         // Check if this Twitter ID is already linked to ANY wallet
-        const existing = await this.socialRepository.findOneBy({
-            platform: SocialPlatform.TWITTER,
-            platform_user_id: twitterId
+        const existing = await this.socialRepository.findOne({
+            where: {
+                platform: SocialPlatform.TWITTER,
+                platform_user_id: twitterId
+            },
+            relations: ['user']
         });
 
         if (existing) {

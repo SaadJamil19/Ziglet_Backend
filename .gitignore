@@ -1,8 +1,5 @@
 node_modules
-<<<<<<< HEAD
-=======
-# Keep environment variables out of version control
+dist
 .env
-
-/src/generated/prisma
->>>>>>> 35139651790e54b37ce588db8f10a1a12b5e97a8
+*.log
+.DS_Store
